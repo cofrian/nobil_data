@@ -1,0 +1,27 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run NOBIL ingest",
+			"type": "shell",
+			"command": "py",
+			"args": [
+				"-3",
+				"-m",
+				"src.nobil_ingest.main"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Run NOBIL ingest",
+			"type": "shell",
+			"command": "py",
+			"args": [
+				"-3",
+				"-m",
+				"src.nobil_ingest.main"
+			],
+			"isBackground": true
+		}
+	]
+}

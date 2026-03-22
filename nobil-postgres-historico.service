@@ -1,0 +1,17 @@
+[Unit]
+Description=NOBIL realtime ingest to PostgreSQL
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/nobil-postgres-historico
+EnvironmentFile=/opt/nobil-postgres-historico/.env
+ExecStart=/opt/nobil-postgres-historico/.venv/bin/python -m src.nobil_ingest.main
+Restart=always
+RestartSec=5
+User=nobil
+Group=nobil
+
+[Install]
+WantedBy=multi-user.target

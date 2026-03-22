@@ -1,0 +1,8 @@
+{
+  "result": "error",
+  "message": "No se pudo preparar el repositorio git para sincronizar",
+  "last_attempt_at": "2026-03-22T13:16:35.777485Z",
+  "last_success_at": "",
+  "branch": "main",
+  "data_root": "data"
+}
