@@ -1,0 +1,30 @@
+{
+  "snapshot_at": "2026-03-22T13:48:10.747620Z",
+  "count": 1,
+  "records": [
+    {
+      "received_at": "2026-03-22T13:48:10.747620Z",
+      "source_ts": null,
+      "record_key": "unknown::f6fc082b7728fdf20a1d2f5e9bb007bbe9d68de0",
+      "station_id": null,
+      "charger_id": null,
+      "connector_id": null,
+      "status": "AVAILABLE",
+      "message_type": null,
+      "payload_json": {
+        "nobilId": "NOR_72380",
+        "evseUId": "d79e1748-12a5-469d-a7f9-a433d053c1e1",
+        "status": "AVAILABLE"
+      },
+      "payload_sha1": "f6fc082b7728fdf20a1d2f5e9bb007bbe9d68de0",
+      "derived": {
+        "event_lag_seconds": null,
+        "status_changed": false,
+        "prev_status": null,
+        "prev_status_duration_seconds": null,
+        "is_duplicate_sha1": false,
+        "missing_fields_count": 4
+      }
+    }
+  ]
+}
