@@ -1,7 +1,7 @@
 {
   "result": "error",
   "message": "Push GitHub fallido",
-  "last_attempt_at": "2026-03-23T06:33:24.454788Z",
+  "last_attempt_at": "2026-03-23T06:48:24.459735Z",
   "last_success_at": "",
   "branch": "main",
   "data_root": "data",
