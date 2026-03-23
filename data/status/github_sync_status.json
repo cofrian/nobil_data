@@ -1,9 +1,8 @@
 {
-  "result": "error",
-  "message": "Push GitHub fallido",
-  "last_attempt_at": "2026-03-23T12:08:44.034143Z",
-  "last_success_at": "",
+  "result": "ok",
+  "message": "Push completado correctamente",
+  "last_attempt_at": "2026-03-23T12:18:39.593331Z",
+  "last_success_at": "2026-03-23T12:18:39.593331Z",
   "branch": "main",
-  "data_root": "data",
-  "details": "To https://github.com/cofrian/nobil_data.git\n ! [remote rejected] main -> main (cannot lock ref 'refs/heads/main': is at 009ddfc53685133af7c20dd9a99f4e13a18b935e but expected 3c8b993c79293b31f6b9a292ba53855fecf8a312)\nerror: failed to push some refs to 'https://github.com/cofrian/nobil_data.git'"
+  "data_root": "data"
 }
