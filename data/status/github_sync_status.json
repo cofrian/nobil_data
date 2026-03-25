@@ -1,9 +1,9 @@
 {
   "result": "error",
   "message": "Push GitHub fallido",
-  "last_attempt_at": "2026-03-25T21:00:26.367186Z",
+  "last_attempt_at": "2026-03-25T21:06:59.652945Z",
   "last_success_at": "2026-03-24T12:52:01.757206Z",
   "branch": "main",
   "data_root": "data",
-  "details": "bash: line 1: /dev/tty: No such device or address\nerror: failed to execute prompt script (exit code 1)\nfatal: could not read Username for 'https://github.com': No such file or directory"
+  "details": "Command '['git', 'push', '-u', 'origin', 'main']' returned non-zero exit status 130."
 }
