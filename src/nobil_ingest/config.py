@@ -21,6 +21,7 @@ class Settings:
     gcs_prefix: str = ""
     gcs_sync_every_minutes: int = 60
     gcs_credentials_json: str = ""
+    local_delete_previous_day: bool = True
     data_root: str = "data"
 
     @classmethod
@@ -37,6 +38,13 @@ class Settings:
         gcs_prefix = os.getenv("GCS_PREFIX", "").strip().strip("/")
         gcs_sync_every_minutes = int(os.getenv("GCS_SYNC_EVERY_MINUTES", "60"))
         gcs_credentials_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
+        local_delete_previous_day = os.getenv("LOCAL_DELETE_PREVIOUS_DAY", "true").strip().lower() in {
+            "1",
+            "true",
+            "yes",
+            "y",
+            "on",
+        }
         data_root = os.getenv("DATA_ROOT", "data").strip() or "data"
 
         if not nobil_api_key:
@@ -63,6 +71,7 @@ class Settings:
             gcs_prefix=gcs_prefix,
             gcs_sync_every_minutes=gcs_sync_every_minutes,
             gcs_credentials_json=gcs_credentials_json,
+            local_delete_previous_day=local_delete_previous_day,
             data_root=data_root,
         )
 

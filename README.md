@@ -1,4 +1,4 @@
-# NOBIL realtime -> JSONL + GitHub + Google Cloud Storage
+ # NOBIL realtime -> JSONL + GitHub + Google Cloud Storage
 
 Este proyecto escucha eventos realtime de NOBIL y guarda los datos en archivos locales versionados con Git, con push por lotes a GitHub y subida incremental opcional a Google Cloud Storage (GCS).
 
@@ -11,6 +11,7 @@ Este proyecto escucha eventos realtime de NOBIL y guarda los datos en archivos l
 5. Mantiene estado actual en memoria y genera snapshots periodicos en JSON.
 6. Hace commit y push automatico cada X minutos sobre la carpeta `data/`.
 7. Opcionalmente sube archivos nuevos/modificados de `data/` a un bucket de GCS.
+8. Limpia en local las carpetas del dia anterior (`raw` y `snapshots`) sin borrar en GitHub ni en GCS.
 
 ## Estructura de archivos
 
@@ -52,6 +53,7 @@ Copia `.env.example` a `.env` y completa:
 - `GCS_PREFIX` (opcional, prefijo dentro del bucket)
 - `GCS_SYNC_EVERY_MINUTES` (default: `60`)
 - `GOOGLE_APPLICATION_CREDENTIALS` (ruta a JSON de service account, opcional si usas ADC)
+- `LOCAL_DELETE_PREVIOUS_DAY` (default: `true`, borra solo localmente `raw/YYYY/MM/DD` y `snapshots/YYYY/MM/DD` del dia anterior)
 - `DATA_ROOT` (default: `data`)
 
 ## Instalacion
@@ -78,9 +80,19 @@ python -m src.nobil_ingest.main
 
 ## Git y seguridad
 
-- Solo se hace `git add` de `data/` para evitar subir secretos.
+- Solo se hace `git add --ignore-removal` de `data/` para evitar subir secretos y evitar borrar archivos en GitHub por limpiezas locales.
 - `.env`, `.venv/`, logs y caches quedan fuera por `.gitignore`.
 - Si no hay `origin` y no defines `GITHUB_REPO_URL`, el proceso sigue guardando archivos pero no puede hacer push.
+
+## Limpieza local automatica
+
+- Se borra automaticamente en local el dia anterior en:
+	- `data/raw/YYYY/MM/DD`
+	- `data/snapshots/YYYY/MM/DD`
+- Esta limpieza no borra objetos en GCS.
+- Esta limpieza no borra archivos en GitHub porque el sync usa `git add --ignore-removal`.
+- Estado persistente del ultimo intento:
+	- `data/status/local_cleanup_status.json`
 
 ## Push manual
 

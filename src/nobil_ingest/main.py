@@ -16,6 +16,7 @@ from .archive import DataArchiver
 from .config import Settings
 from .gcs_sync import GCSBatchUploader
 from .git_sync import GitBatchPusher
+from .local_cleanup import LocalPreviousDayCleaner
 from .parser import extract_records, normalize_record
 
 TOKEN_URL = "https://api.data.enova.no/nobil/real-time/v1/Realtime"
@@ -100,6 +101,11 @@ def run() -> None:
         sync_every_minutes=settings.gcs_sync_every_minutes,
         credentials_json=settings.gcs_credentials_json,
     )
+    local_cleaner = LocalPreviousDayCleaner(
+        project_root=project_root,
+        data_root=settings.data_root,
+        enabled=settings.local_delete_previous_day,
+    )
 
     logging.info("Archivo de datos habilitado en %s", (project_root / settings.data_root).resolve())
 
@@ -156,6 +162,7 @@ def run() -> None:
                 last_snapshot_at = maybe_snapshot(archiver, last_snapshot_at, settings.snapshot_every)
                 pusher.maybe_push()
                 gcs_uploader.maybe_sync()
+                local_cleaner.maybe_cleanup()
 
         except Exception as exc:
             logging.exception("Error en el proceso realtime: %s", exc)
@@ -169,6 +176,7 @@ def run() -> None:
 
     pusher.maybe_push(force=True)
     gcs_uploader.maybe_sync(force=True)
+    local_cleaner.maybe_cleanup(force=True)
 
     logging.info("Proceso finalizado")
 

@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NOBIL Data Explorer</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #131a2e;
+      --muted: #a8b3cf;
+      --text: #e8ecf8;
+      --accent: #4da3ff;
+      --ok: #36c98f;
+      --warn: #ffd166;
+      --border: #27304a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 2;
+    }
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+    }
+    .muted { color: var(--muted); }
+
+    .controls, .filters, .actions {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .controls { grid-template-columns: 1.2fr 1fr auto; }
+    .filters { grid-template-columns: repeat(4, minmax(120px, 1fr)); }
+    .actions { grid-template-columns: repeat(4, auto); justify-content: start; }
+
+    input, select, button {
+      height: 36px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--panel);
+      color: var(--text);
+      padding: 0 10px;
+      outline: none;
+    }
+    button {
+      cursor: pointer;
+      background: #1b2542;
+    }
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #00152e;
+      font-weight: 600;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 14px;
+      padding: 14px;
+    }
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--panel);
+      overflow: hidden;
+    }
+    .panel h2 {
+      margin: 0;
+      padding: 12px;
+      font-size: 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .panel .content {
+      padding: 10px;
+      max-height: calc(100vh - 270px);
+      overflow: auto;
+    }
+
+    .folder {
+      padding: 6px 8px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .folder:hover { background: #1b2542; }
+    .folder.active { background: #22345f; color: #d5e7ff; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    th { position: sticky; top: 0; background: var(--panel); z-index: 1; }
+    .tag {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .stats .tag strong { color: var(--text); }
+
+    .help {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .health {
+      margin-top: 8px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #121b33;
+      font-size: 13px;
+    }
+    .health.ok {
+      border-color: #2f8f6a;
+      color: #baf5de;
+    }
+    .health.down {
+      border-color: #b45454;
+      color: #ffd2d2;
+      background: #2a1414;
+    }
+
+    @media (max-width: 1024px) {
+      main { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr; }
+      .filters { grid-template-columns: 1fr 1fr; }
+      .actions { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Explorador público del bucket NOBIL</h1>
+    <div class="muted">Ver carpetas, filtrar por fecha y descargar archivos.</div>
+
+    <div class="controls">
+      <input id="bucket" placeholder="Bucket (ej: mi-bucket-publico)" />
+      <input id="prefix" placeholder="Prefijo opcional (ej: data)" />
+      <button id="loadBtn" class="primary">Cargar archivos</button>
+    </div>
+
+    <div class="filters">
+      <input id="fromDate" type="date" />
+      <input id="toDate" type="date" />
+      <select id="kind">
+        <option value="all">Todos</option>
+        <option value="raw">Solo raw</option>
+        <option value="snapshots">Solo snapshots</option>
+      </select>
+      <input id="search" placeholder="Buscar texto en ruta..." />
+    </div>
+
+    <div class="actions">
+      <button id="applyBtn">Aplicar filtros</button>
+      <button id="clearBtn">Limpiar filtros</button>
+      <button id="selectVisibleBtn">Seleccionar visibles</button>
+      <button id="downloadSelectedBtn">Descargar selección</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+    <div class="health" id="healthStatus">Estado: pendiente de carga</div>
+    <div class="help" id="statusMsg">Listo para cargar.</div>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Carpetas</h2>
+      <div class="content" id="folders"></div>
+    </section>
+
+    <section class="panel">
+      <h2>Archivos</h2>
+      <div class="content">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;"><input type="checkbox" id="checkAll" /></th>
+              <th>Ruta</th>
+              <th style="width: 120px;">Fecha</th>
+              <th style="width: 110px;">Tamaño</th>
+              <th style="width: 110px;">Descarga</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      allFiles: [],
+      filteredFiles: [],
+      selectedFolder: "",
+      lastUploadAt: null,
+      downAlertShown: false,
+    };
+
+    const els = {
+      bucket: document.getElementById("bucket"),
+      prefix: document.getElementById("prefix"),
+      fromDate: document.getElementById("fromDate"),
+      toDate: document.getElementById("toDate"),
+      kind: document.getElementById("kind"),
+      search: document.getElementById("search"),
+      loadBtn: document.getElementById("loadBtn"),
+      applyBtn: document.getElementById("applyBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      selectVisibleBtn: document.getElementById("selectVisibleBtn"),
+      downloadSelectedBtn: document.getElementById("downloadSelectedBtn"),
+      rows: document.getElementById("rows"),
+      folders: document.getElementById("folders"),
+      statusMsg: document.getElementById("statusMsg"),
+      healthStatus: document.getElementById("healthStatus"),
+      stats: document.getElementById("stats"),
+      checkAll: document.getElementById("checkAll"),
+    };
+
+    function formatDateTime(value) {
+      if (!value) return "-";
+      const dt = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(dt.getTime())) return "-";
+      return dt.toLocaleString();
+    }
+
+    function updateHealthStatus() {
+      if (!(state.lastUploadAt instanceof Date) || Number.isNaN(state.lastUploadAt.getTime())) {
+        els.healthStatus.textContent = "Estado: sin datos de subida";
+        els.healthStatus.className = "health";
+        return;
+      }
+
+      const now = Date.now();
+      const diffMs = Math.max(0, now - state.lastUploadAt.getTime());
+      const diffHours = diffMs / (1000 * 60 * 60);
+      const isDown = diffHours >= 2;
+      const rounded = diffHours.toFixed(2);
+      const lastUploadText = formatDateTime(state.lastUploadAt);
+
+      if (isDown) {
+        els.healthStatus.className = "health down";
+        els.healthStatus.textContent = `Estado: CAÍDO | Última subida: ${lastUploadText} | Diferencia: ${rounded} h | Avisar a Sergio`;
+        if (!state.downAlertShown) {
+          window.alert(`⚠️ Estado CAÍDO: han pasado ${rounded} horas desde la última subida. Avisar a Sergio.`);
+          state.downAlertShown = true;
+        }
+      } else {
+        els.healthStatus.className = "health ok";
+        els.healthStatus.textContent = `Estado: OK | Última subida: ${lastUploadText} | Diferencia: ${rounded} h`;
+        state.downAlertShown = false;
+      }
+    }
+
+    function setStatus(message, isError = false) {
+      els.statusMsg.textContent = message;
+      els.statusMsg.style.color = isError ? "#ff8f8f" : "#a8b3cf";
+    }
+
+    function parseDateFromPath(path) {
+      const match = path.match(/\b(\d{4})\/(\d{2})\/(\d{2})\b/);
+      if (!match) return "";
+      return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+
+    function formatBytes(bytes) {
+      const n = Number(bytes || 0);
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 ** 2) return `${(n / 1024).toFixed(1)} KB`;
+      if (n < 1024 ** 3) return `${(n / 1024 ** 2).toFixed(1)} MB`;
+      return `${(n / 1024 ** 3).toFixed(2)} GB`;
+    }
+
+    function fileKind(path) {
+      if (path.includes("/raw/")) return "raw";
+      if (path.includes("/snapshots/")) return "snapshots";
+      return "other";
+    }
+
+    function buildFileUrl(bucket, key) {
+      return `https://storage.googleapis.com/${bucket}/${key.split("/").map(encodeURIComponent).join("/")}`;
+    }
+
+    function xmlToFiles(xmlText) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, "application/xml");
+      const contents = [...xml.getElementsByTagName("Contents")];
+      return contents
+        .map(node => {
+          const key = node.getElementsByTagName("Key")[0]?.textContent || "";
+          const size = node.getElementsByTagName("Size")[0]?.textContent || "0";
+          const lastModified = node.getElementsByTagName("LastModified")[0]?.textContent || "";
+          if (!key || key.endsWith("/")) return null;
+          return {
+            key,
+            size: Number(size),
+            date: parseDateFromPath(key),
+            kind: fileKind(key),
+            lastModified,
+            checked: false,
+          };
+        })
+        .filter(Boolean);
+    }
+
+    function readTag(xmlText, tagName) {
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(xmlText, "application/xml");
+      return xml.getElementsByTagName(tagName)[0]?.textContent || "";
+    }
+
+    async function fetchAllObjects(bucket, prefix) {
+      const files = [];
+      let marker = "";
+
+      while (true) {
+        const params = new URLSearchParams();
+        if (prefix) params.set("prefix", prefix.replace(/^\/+|\/+$/g, "") + "/");
+        if (marker) params.set("marker", marker);
+
+        const url = `https://storage.googleapis.com/${encodeURIComponent(bucket)}?${params.toString()}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`No se pudo listar bucket (${res.status})`);
+
+        const text = await res.text();
+        files.push(...xmlToFiles(text));
+
+        const isTruncated = readTag(text, "IsTruncated") === "true";
+        if (!isTruncated) break;
+        marker = readTag(text, "NextMarker") || files[files.length - 1]?.key || "";
+        if (!marker) break;
+      }
+
+      return files;
+    }
+
+    function updateStats() {
+      const selected = state.filteredFiles.filter(f => f.checked).length;
+      const rawCount = state.filteredFiles.filter(f => f.kind === "raw").length;
+      const snapshotsCount = state.filteredFiles.filter(f => f.kind === "snapshots").length;
+      const totalSize = state.filteredFiles.reduce((sum, f) => sum + f.size, 0);
+      const lastUploadText = formatDateTime(state.lastUploadAt);
+
+      els.stats.innerHTML = [
+        `<span class="tag"><strong>${state.filteredFiles.length}</strong> visibles</span>`,
+        `<span class="tag"><strong>${selected}</strong> seleccionados</span>`,
+        `<span class="tag"><strong>${rawCount}</strong> raw</span>`,
+        `<span class="tag"><strong>${snapshotsCount}</strong> snapshots</span>`,
+        `<span class="tag"><strong>${formatBytes(totalSize)}</strong> tamaño visible</span>`,
+        `<span class="tag">última subida: <strong>${lastUploadText}</strong></span>`,
+      ].join(" ");
+
+      updateHealthStatus();
+    }
+
+    function buildFolders(files) {
+      const set = new Set();
+      files.forEach(f => {
+        const parts = f.key.split("/");
+        for (let i = 1; i < parts.length; i++) {
+          set.add(parts.slice(0, i).join("/"));
+        }
+      });
+      return [...set].sort((a, b) => a.localeCompare(b));
+    }
+
+    function renderFolders() {
+      const folders = buildFolders(state.allFiles);
+      const allItem = `<div class="folder ${state.selectedFolder === "" ? "active" : ""}" data-folder="">(todas)</div>`;
+      const items = folders
+        .map(folder => `<div class="folder ${state.selectedFolder === folder ? "active" : ""}" data-folder="${folder}">${folder}</div>`)
+        .join("");
+
+      els.folders.innerHTML = allItem + items;
+
+      [...els.folders.querySelectorAll(".folder")].forEach(el => {
+        el.addEventListener("click", () => {
+          state.selectedFolder = el.dataset.folder || "";
+          applyFilters();
+          renderFolders();
+        });
+      });
+    }
+
+    function applyFilters() {
+      const fromDate = els.fromDate.value;
+      const toDate = els.toDate.value;
+      const kind = els.kind.value;
+      const q = (els.search.value || "").toLowerCase().trim();
+
+      state.filteredFiles = state.allFiles.filter(file => {
+        if (state.selectedFolder && !file.key.startsWith(state.selectedFolder + "/") && file.key !== state.selectedFolder) return false;
+        if (kind !== "all" && file.kind !== kind) return false;
+        if (fromDate && (!file.date || file.date < fromDate)) return false;
+        if (toDate && (!file.date || file.date > toDate)) return false;
+        if (q && !file.key.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      renderRows();
+      updateStats();
+    }
+
+    function renderRows() {
+      if (!state.filteredFiles.length) {
+        els.rows.innerHTML = `<tr><td colspan="5" class="muted">No hay archivos para mostrar.</td></tr>`;
+        return;
+      }
+
+      els.rows.innerHTML = state.filteredFiles
+        .map((f, index) => {
+          const url = buildFileUrl(els.bucket.value.trim(), f.key);
+          return `
+            <tr>
+              <td><input type="checkbox" data-index="${index}" ${f.checked ? "checked" : ""} /></td>
+              <td><span class="tag">${f.kind}</span> ${f.key}</td>
+              <td>${f.date || "-"}</td>
+              <td>${formatBytes(f.size)}</td>
+              <td><a href="${url}" target="_blank" rel="noopener noreferrer">Descargar</a></td>
+            </tr>
+          `;
+        })
+        .join("");
+
+      [...els.rows.querySelectorAll("input[type='checkbox']")].forEach(cb => {
+        cb.addEventListener("change", () => {
+          const i = Number(cb.dataset.index);
+          state.filteredFiles[i].checked = cb.checked;
+          const key = state.filteredFiles[i].key;
+          const original = state.allFiles.find(f => f.key === key);
+          if (original) original.checked = cb.checked;
+          updateStats();
+        });
+      });
+    }
+
+    async function downloadSelected() {
+      const bucket = els.bucket.value.trim();
+      if (!bucket) return;
+      const selected = state.allFiles.filter(f => f.checked);
+      if (!selected.length) {
+        setStatus("No hay archivos seleccionados para descargar.", true);
+        return;
+      }
+
+      setStatus(`Iniciando descarga de ${selected.length} archivo(s)...`);
+      for (const file of selected) {
+        const a = document.createElement("a");
+        a.href = buildFileUrl(bucket, file.key);
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        await new Promise(r => setTimeout(r, 180));
+      }
+      setStatus(`Descarga solicitada para ${selected.length} archivo(s).`);
+    }
+
+    async function loadFiles() {
+      const bucket = els.bucket.value.trim();
+      const prefix = els.prefix.value.trim();
+      if (!bucket) {
+        setStatus("Indica el nombre del bucket.", true);
+        return;
+      }
+
+      try {
+        els.loadBtn.disabled = true;
+        setStatus("Cargando listado del bucket...");
+
+        state.allFiles = await fetchAllObjects(bucket, prefix);
+        state.selectedFolder = "";
+        const lastUploadMs = Math.max(
+          ...state.allFiles
+            .map(f => new Date(f.lastModified || 0).getTime())
+            .filter(ms => Number.isFinite(ms) && ms > 0),
+          0,
+        );
+        state.lastUploadAt = lastUploadMs > 0 ? new Date(lastUploadMs) : null;
+
+        if (!state.allFiles.length) {
+          renderFolders();
+          applyFilters();
+          setStatus("No se encontraron archivos con ese bucket/prefijo.");
+          return;
+        }
+
+        state.allFiles.sort((a, b) => a.key.localeCompare(b.key));
+        renderFolders();
+        applyFilters();
+        setStatus(`Carga completada: ${state.allFiles.length} archivo(s).`);
+      } catch (error) {
+        setStatus(`Error cargando bucket: ${error.message}. Si el HTML está fuera del bucket, configura CORS.`, true);
+      } finally {
+        els.loadBtn.disabled = false;
+      }
+    }
+
+    function clearFilters() {
+      els.fromDate.value = "";
+      els.toDate.value = "";
+      els.kind.value = "all";
+      els.search.value = "";
+      state.selectedFolder = "";
+      applyFilters();
+      renderFolders();
+    }
+
+    function selectVisible(checked) {
+      state.filteredFiles.forEach(file => {
+        file.checked = checked;
+        const original = state.allFiles.find(f => f.key === file.key);
+        if (original) original.checked = checked;
+      });
+      renderRows();
+      updateStats();
+    }
+
+    els.loadBtn.addEventListener("click", loadFiles);
+    els.applyBtn.addEventListener("click", applyFilters);
+    els.clearBtn.addEventListener("click", clearFilters);
+    els.selectVisibleBtn.addEventListener("click", () => selectVisible(true));
+    els.downloadSelectedBtn.addEventListener("click", downloadSelected);
+    els.checkAll.addEventListener("change", () => selectVisible(els.checkAll.checked));
+
+    const query = new URLSearchParams(window.location.search);
+    if (query.get("bucket")) els.bucket.value = query.get("bucket");
+    if (query.get("prefix")) els.prefix.value = query.get("prefix");
+  </script>
+</body>
+</html>

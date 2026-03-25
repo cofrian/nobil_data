@@ -107,7 +107,7 @@ class GitBatchPusher:
 
         try:
             logging.info("Iniciando sync de data/ a GitHub...")
-            self._run_git(["add", "--", self.data_root])
+            self._run_git(["add", "--ignore-removal", "--", self.data_root])
             staged = self._run_git(["diff", "--cached", "--quiet"], check=False)
             if staged.returncode == 0:
                 logging.info("Sync GitHub omitido: no hay cambios en %s", self.data_root)
