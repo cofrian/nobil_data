@@ -1,8 +1,9 @@
 {
-  "result": "ok",
-  "message": "Push completado correctamente",
-  "last_attempt_at": "2026-03-24T12:52:01.757206Z",
+  "result": "error",
+  "message": "Push GitHub fallido",
+  "last_attempt_at": "2026-03-25T21:06:59.652945Z",
   "last_success_at": "2026-03-24T12:52:01.757206Z",
   "branch": "main",
-  "data_root": "data"
+  "data_root": "data",
+  "details": "Command '['git', 'push', '-u', 'origin', 'main']' returned non-zero exit status 130."
 }
