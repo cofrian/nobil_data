@@ -1,9 +1,8 @@
 {
   "result": "error",
-  "message": "Push GitHub fallido",
-  "last_attempt_at": "2026-03-25T21:06:59.652945Z",
-  "last_success_at": "2026-03-24T12:52:01.757206Z",
+  "message": "No se pudo preparar el repositorio git para sincronizar",
+  "last_attempt_at": "2026-03-25T21:41:36.945413Z",
+  "last_success_at": "2026-03-25T21:30:35.363317Z",
   "branch": "main",
-  "data_root": "data",
-  "details": "Command '['git', 'push', '-u', 'origin', 'main']' returned non-zero exit status 130."
+  "data_root": "data"
 }
