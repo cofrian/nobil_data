@@ -14,6 +14,7 @@ import websocket
 
 from .archive import DataArchiver
 from .config import Settings
+from .gcs_sync import GCSBatchUploader
 from .git_sync import GitBatchPusher
 from .parser import extract_records, normalize_record
 
@@ -91,6 +92,14 @@ def run() -> None:
         push_every_minutes=settings.github_push_every_minutes,
         repo_url=settings.github_repo_url,
     )
+    gcs_uploader = GCSBatchUploader(
+        project_root=project_root,
+        data_root=settings.data_root,
+        bucket_name=settings.gcs_bucket_name,
+        prefix=settings.gcs_prefix,
+        sync_every_minutes=settings.gcs_sync_every_minutes,
+        credentials_json=settings.gcs_credentials_json,
+    )
 
     logging.info("Archivo de datos habilitado en %s", (project_root / settings.data_root).resolve())
 
@@ -146,6 +155,7 @@ def run() -> None:
                 logging.info("Mensaje procesado: %s registro(s)", len(records))
                 last_snapshot_at = maybe_snapshot(archiver, last_snapshot_at, settings.snapshot_every)
                 pusher.maybe_push()
+                gcs_uploader.maybe_sync()
 
         except Exception as exc:
             logging.exception("Error en el proceso realtime: %s", exc)
@@ -158,6 +168,7 @@ def run() -> None:
                     pass
 
     pusher.maybe_push(force=True)
+    gcs_uploader.maybe_sync(force=True)
 
     logging.info("Proceso finalizado")
 

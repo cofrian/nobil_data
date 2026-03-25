@@ -17,6 +17,10 @@ class Settings:
     github_repo_url: str = ""
     github_branch: str = "main"
     github_push_every_minutes: int = 60
+    gcs_bucket_name: str = ""
+    gcs_prefix: str = ""
+    gcs_sync_every_minutes: int = 60
+    gcs_credentials_json: str = ""
     data_root: str = "data"
 
     @classmethod
@@ -29,6 +33,10 @@ class Settings:
         github_repo_url = os.getenv("GITHUB_REPO_URL", "").strip()
         github_branch = os.getenv("GITHUB_BRANCH", "main").strip() or "main"
         github_push_every_minutes = int(os.getenv("GITHUB_PUSH_EVERY_MINUTES", "60"))
+        gcs_bucket_name = os.getenv("GCS_BUCKET_NAME", "").strip()
+        gcs_prefix = os.getenv("GCS_PREFIX", "").strip().strip("/")
+        gcs_sync_every_minutes = int(os.getenv("GCS_SYNC_EVERY_MINUTES", "60"))
+        gcs_credentials_json = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "").strip()
         data_root = os.getenv("DATA_ROOT", "data").strip() or "data"
 
         if not nobil_api_key:
@@ -39,6 +47,8 @@ class Settings:
             raise RuntimeError("RECONNECT_SECONDS debe ser mayor que 0")
         if github_push_every_minutes <= 0:
             raise RuntimeError("GITHUB_PUSH_EVERY_MINUTES debe ser mayor que 0")
+        if gcs_sync_every_minutes <= 0:
+            raise RuntimeError("GCS_SYNC_EVERY_MINUTES debe ser mayor que 0")
 
         return cls(
             nobil_api_key=nobil_api_key,
@@ -49,6 +59,10 @@ class Settings:
             github_repo_url=github_repo_url,
             github_branch=github_branch,
             github_push_every_minutes=github_push_every_minutes,
+            gcs_bucket_name=gcs_bucket_name,
+            gcs_prefix=gcs_prefix,
+            gcs_sync_every_minutes=gcs_sync_every_minutes,
+            gcs_credentials_json=gcs_credentials_json,
             data_root=data_root,
         )
 

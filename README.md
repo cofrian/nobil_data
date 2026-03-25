@@ -1,6 +1,6 @@
-# NOBIL realtime -> JSONL + GitHub batches
+# NOBIL realtime -> JSONL + GitHub + Google Cloud Storage
 
-Este proyecto escucha eventos realtime de NOBIL y guarda los datos en archivos locales versionados con Git, con push por lotes a GitHub.
+Este proyecto escucha eventos realtime de NOBIL y guarda los datos en archivos locales versionados con Git, con push por lotes a GitHub y subida incremental opcional a Google Cloud Storage (GCS).
 
 ## Que hace
 
@@ -10,6 +10,7 @@ Este proyecto escucha eventos realtime de NOBIL y guarda los datos en archivos l
 4. Guarda cada evento en JSONL rotado por hora.
 5. Mantiene estado actual en memoria y genera snapshots periodicos en JSON.
 6. Hace commit y push automatico cada X minutos sobre la carpeta `data/`.
+7. Opcionalmente sube archivos nuevos/modificados de `data/` a un bucket de GCS.
 
 ## Estructura de archivos
 
@@ -47,6 +48,10 @@ Copia `.env.example` a `.env` y completa:
 - `GITHUB_REPO_URL` (opcional si `origin` ya existe)
 - `GITHUB_BRANCH` (default: `main`)
 - `GITHUB_PUSH_EVERY_MINUTES` (default: `60`)
+- `GCS_BUCKET_NAME` (opcional, si se define activa sync a GCS)
+- `GCS_PREFIX` (opcional, prefijo dentro del bucket)
+- `GCS_SYNC_EVERY_MINUTES` (default: `60`)
+- `GOOGLE_APPLICATION_CREDENTIALS` (ruta a JSON de service account, opcional si usas ADC)
 - `DATA_ROOT` (default: `data`)
 
 ## Instalacion
@@ -97,3 +102,31 @@ Campos clave en ese archivo:
 - `last_attempt_at`: ultimo intento UTC
 - `last_success_at`: ultimo push exitoso UTC
 - `details`: detalle tecnico del error cuando aplique
+
+## Monitoreo de estado de GCS
+
+- Estado persistente del ultimo intento de sync a bucket:
+	- `data/status/gcs_sync_status.json`
+- Manifest local de archivos ya sincronizados:
+	- `data/status/gcs_manifest.json`
+
+## Permisos recomendados de bucket GCS
+
+Objetivo: lectura publica de objetos para cualquiera, pero subida y borrado solo para ti.
+
+1. Activa **Uniform bucket-level access** en el bucket.
+2. Concede a `allUsers` el rol `Storage Object Viewer` (`roles/storage.objectViewer`).
+3. Concede a tu identidad (usuario o service account) `Storage Object Admin` (`roles/storage.objectAdmin`) para subir/borrar objetos.
+4. Evita conceder roles de escritura a otras identidades.
+
+Ejemplo con `gcloud` (sustituye variables):
+
+```bash
+gcloud storage buckets add-iam-policy-binding gs://TU_BUCKET \
+	--member=allUsers \
+	--role=roles/storage.objectViewer
+
+gcloud storage buckets add-iam-policy-binding gs://TU_BUCKET \
+	--member=user:tu-correo@dominio.com \
+	--role=roles/storage.objectAdmin
+```
