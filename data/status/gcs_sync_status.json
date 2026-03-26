@@ -1,8 +1,8 @@
 {
   "result": "ok",
   "message": "Sincronizacion a GCS completada",
-  "last_attempt_at": "2026-03-26T15:43:23.926527Z",
-  "last_success_at": "2026-03-26T15:43:23.926527Z",
+  "last_attempt_at": "2026-03-26T16:43:22.952154Z",
+  "last_success_at": "2026-03-26T16:43:22.952154Z",
   "bucket": "nobil-events-data",
   "prefix": "nobil-data",
   "data_root": "data",
