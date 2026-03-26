@@ -1,6 +1,10 @@
 {
-  "result": "noop",
-  "message": "No habia carpetas del dia anterior para borrar (2026-03-24)",
-  "last_attempt_at": "2026-03-25T21:42:59.293365Z",
-  "data_root": "data"
+  "result": "ok",
+  "message": "Se borraron carpetas locales del dia anterior (2026-03-25)",
+  "last_attempt_at": "2026-03-26T00:00:02.408105Z",
+  "data_root": "data",
+  "deleted_paths": [
+    "raw/2026/03/25",
+    "snapshots/2026/03/25"
+  ]
 }
